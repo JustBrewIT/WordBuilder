@@ -1,50 +1,79 @@
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Scanner;
 import java.io.*;
 import java.net.*;
-
 import org.json.simple.*;
 import org.json.simple.parser.*;
-import java.util.Iterator;
 
 public class WordBuilder {
 	static int permCount = 0;
 	static String key = "121a8ef5-2ef2-44c8-bc3e-dbca7b25b860";
 	
-	public static void main(String [] args) throws IOException {
-		//final String PROMPT_STRING = "Enter a string to permute in reverse (<Enter> to exit): ";
-		//Scanner scnr = new Scanner(System.in);
-		//String input;
-		
-		// Get input and permute the string
-		//System.out.println(PROMPT_STRING);
-		//input = scnr.nextLine();
-		//while (input.length() > 0) {
-		//permCount = 0;
-		//permuteString("", input);
-		//System.out.println(PROMPT_STRING);
-		//input = scnr.nextLine();
-	//} 
-	//System.out.println("Done.");
+	public static void main(String [] args) {
+		final String PROMPT_STRING = "Type in a string of up to (5) letters [a-z] followed by <Enter> to generate a list of possible words, or only hit <Enter> to exit: ";
+		final String EXIT_STRING = "Exiting WordBuilder.";
+		final String DIVIDER_STRING = "=======================================================================\n";
+		Scanner scnr = new Scanner(System.in);
+		String input;
 		ArrayList<String> words = new ArrayList<String>();
-		String input = "abcd";
-		permCount = 0;
-		words = permute(words, "", input);
-		System.out.println(words);		
-	} 
+		System.out.println(PROMPT_STRING);
+		input = scnr.nextLine();
+		
+		while (input.length() > 0) {
+			permCount = 0;
+			words = permute(words, "", input);
+//			int retryCount = 0;
+//			String word = "";
+//			words.set(0, "cat");
+//			int wordsSize = words.size();
+//			
+//			for(int i = 0; i < wordsSize; ++i) {
+//				word = words.get(i);
+//				try {
+//					if (!wordCheck(word)) {
+//						words.remove(word);
+//						--i;
+//						--wordsSize;
+//					}
+//				} catch (IOException e) {
+//					if(retryCount < 3) {
+//						++retryCount;
+//						System.out.printf("Cannot connect to API. Retrying attempt #%d....\n", retryCount);;
+//						--i;
+//					}
+//					else {
+//						System.out.printf("Cannot complete request. Program was only able to test %d out of %d strings. \n", i, words.size());
+//						break;
+//					}
+//				}
+//			}
+			
+			System.out.printf("\nYour input \"%s\" contains %d valid word(s) out of %d possibilities.\n", input,  words.size(), permCount);
+			for(int i = 0; i < words.size(); ++i) {
+				System.out.printf("%d. %s\n", i + 1, words.get(i));
+			}
+			
+			words.clear();
+			System.out.println(DIVIDER_STRING);
+			System.out.printf("%s\n", PROMPT_STRING);
+			input = scnr.nextLine();
+		}
+		
+		System.out.println(EXIT_STRING);
+	}
 	
-	public static ArrayList<String> permute(ArrayList<String> words, String head, String tail) throws IOException {
+	public static ArrayList<String> permute(ArrayList<String> words, String head, String tail) {
 		char current;
 		String newTail;
 		String newString;
+		String newHead;
 		int len;
 		int i;
 		current = '*';
 		len = tail.length();
+		
 		if (len <= 1) {
 			++permCount;
-			//System.out.println(permCount + ") " + head + tail);
 			newString = head + tail;
 			words.add(newString);
 		}
@@ -52,28 +81,20 @@ public class WordBuilder {
 			for (i = len - 1; i >= 0; --i) {
 				current = tail.charAt(i);
 				newTail = tail.substring(0, i) + tail.substring(i + 1);
-				//System.out.print("c: " + current + " | ");
-				//System.out.print(tail.substring(0, i) + "+ " + tail.substring(i + 1) + " | ");
-	            permute(words, head + current, newTail);
+				newHead = head + current;
+				words.add(newHead);
+	            permute(words, newHead, newTail);
 			} 
 		}
-		words.set(0, "cat");
-		for(String word: words) {
-			if (!wordCheck(word)) {
-				words.remove(word);
-			}
-		}
+		
 		return words;
 	} 
 	
 	
-	// https://www.srijan.net/blog/how-parse-json-data-rest-api-using-simple-json-library
-	// https://medium.com/programmers-blockchain/importing-gson-into-eclipse-ec8cf678ad52
-	// http://www.jsonschema2pojo.org/
 	public static boolean wordCheck(String word) throws IOException {
-
 		String jsonString = "";
 		URL url = new URL(String.format("https://www.dictionaryapi.com/api/v3/references/collegiate/json/%s?key=%s", word, key));
+		System.out.printf("Connecting to API to check if \"%s\" is a valid word...\n", word);
 		HttpURLConnection con = (HttpURLConnection)url.openConnection();
 		con.setRequestMethod("GET");
 		con.connect();
@@ -87,29 +108,34 @@ public class WordBuilder {
 				jsonString += scnr.nextLine();
 			}
 		}
-		//System.out.print(jsonData);
 		con.disconnect();
 		return jsonResp(jsonString);	
 	}
 
 
-	public static boolean jsonResp(String jsonString) throws IOException {
-		
+	public static boolean jsonResp(String jsonString) {
+		String[] badTypes = {"abbreviation"};
 		JSONParser parse = new JSONParser();
-//		JSONObject jsonResp = (JSONObject)parse.parse(jsonString);
-//		for(Iterator iterator = jsonResp.keySet().iterator(); iterator.hasNext();) {
-//		    String key = (String) iterator.next();
-//		    System.out.println(jsonResp.get(key));
-//		}
+		
 		try {
 			JSONArray jsonData = (JSONArray) parse.parse(jsonString);
-			//System.out.print(jsonData);
-			JSONObject meta = (JSONObject) jsonData.get(0);
+			JSONObject jsonSubData = (JSONObject) jsonData.get(0);
+			String fl = (String) jsonSubData.get("fl");
+			for(String badType: badTypes) {
+				if(fl.equals(badType)) {
+					return false;
+				}
+			}
 			return true;
 		}
 		catch (Exception e){
-			return false;
+			 return false;
 		}
-
 	}
+
 }
+
+
+// https://www.srijan.net/blog/how-parse-json-data-rest-api-using-simple-json-library
+// https://medium.com/programmers-blockchain/importing-gson-into-eclipse-ec8cf678ad52
+// http://www.jsonschema2pojo.org/
