@@ -6,7 +6,7 @@ import org.json.simple.*;
 import org.json.simple.parser.*;
 
 public class WordBuilder {
-	static int permCount = 0;
+	static int permSubCount = 0;
 	static String key = "121a8ef5-2ef2-44c8-bc3e-dbca7b25b860";
 	
 	public static void main(String [] args) {
@@ -20,35 +20,35 @@ public class WordBuilder {
 		input = scnr.nextLine();
 		
 		while (input.length() > 0) {
-			permCount = 0;
+			permSubCount = 0;
 			words = permute(words, "", input);
-//			int retryCount = 0;
-//			String word = "";
-//			words.set(0, "cat");
-//			int wordsSize = words.size();
-//			
-//			for(int i = 0; i < wordsSize; ++i) {
-//				word = words.get(i);
-//				try {
-//					if (!wordCheck(word)) {
-//						words.remove(word);
-//						--i;
-//						--wordsSize;
-//					}
-//				} catch (IOException e) {
-//					if(retryCount < 3) {
-//						++retryCount;
-//						System.out.printf("Cannot connect to API. Retrying attempt #%d....\n", retryCount);;
-//						--i;
-//					}
-//					else {
-//						System.out.printf("Cannot complete request. Program was only able to test %d out of %d strings. \n", i, words.size());
-//						break;
-//					}
-//				}
-//			}
+			int retryCount = 0;
+			String word = "";
+			words.set(0, "cat");
+			int wordsSize = words.size();
 			
-			System.out.printf("\nYour input \"%s\" contains %d valid word(s) out of %d possibilities.\n", input,  words.size(), permCount);
+			for(int i = 0; i < wordsSize; ++i) {
+				word = words.get(i);
+				try {
+					if (!wordCheck(word)) {
+						words.remove(word);
+						--i;
+						--wordsSize;
+					}
+				} catch (IOException e) {
+					if(retryCount < 3) {
+						++retryCount;
+						System.out.printf("Cannot connect to API. Retrying attempt #%d....\n", retryCount);;
+						--i;
+					}
+					else {
+						System.out.printf("Cannot complete request. Program was only able to test %d out of %d strings. \n", i, words.size());
+						break;
+					}
+				}
+			}
+			
+			System.out.printf("\nYour input \"%s\" contains %d valid word(s) out of %d possibilities.\n", input,  words.size(), permSubCount);
 			for(int i = 0; i < words.size(); ++i) {
 				System.out.printf("%d. %s\n", i + 1, words.get(i));
 			}
@@ -73,7 +73,7 @@ public class WordBuilder {
 		len = tail.length();
 		
 		if (len <= 1) {
-			++permCount;
+			++permSubCount;
 			newString = head + tail;
 			words.add(newString);
 		}
@@ -81,9 +81,11 @@ public class WordBuilder {
 			for (i = len - 1; i >= 0; --i) {
 				current = tail.charAt(i);
 				newTail = tail.substring(0, i) + tail.substring(i + 1);
+				++permSubCount;
 				newHead = head + current;
 				words.add(newHead);
-	            permute(words, newHead, newTail);
+	            
+				permute(words, newHead, newTail);
 			} 
 		}
 		
